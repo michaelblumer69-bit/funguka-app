@@ -636,7 +636,7 @@ app.delete('/api/confessions/:id', async (req, res) => {
   const { id } = req.params;
   try {
     // Get audio URL first to delete from Cloudinary
-    const result = await db.query('SELECT audio_url FROM confessions WHERE id = $1', [id]);
+    const result = await pool.query('SELECT audio_url FROM confessions WHERE id = $1', [id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Not found' });
     }
@@ -654,7 +654,7 @@ app.delete('/api/confessions/:id', async (req, res) => {
     }
 
     // Delete from database
-    await db.query('DELETE FROM confessions WHERE id = $1', [id]);
+    await pool.query('DELETE FROM confessions WHERE id = $1', [id]);
     res.status(204).send();
   } catch (err) {
     console.error('Delete error:', err);
@@ -672,7 +672,7 @@ app.patch('/api/confessions/:id/hide', async (req, res) => {
   const { id } = req.params;
   const { hidden } = req.body;
   try {
-    await db.query('UPDATE confessions SET hidden = $1 WHERE id = $2', [hidden, id]);
+    await pool.query('UPDATE confessions SET hidden = $1 WHERE id = $2', [hidden, id]);
     res.json({ success: true });
   } catch (err) {
     console.error('Hide error:', err);
