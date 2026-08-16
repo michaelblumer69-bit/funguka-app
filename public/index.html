@@ -944,7 +944,7 @@ html, body {
     <div style="width: 38px;"></div>
   </div>
 
-  <div id="submit-form">
+  <div id="submit-form" style="padding-bottom: 120px;">
     <div class="anon-notice">
       <strong>100% Anonymous.</strong> We don't collect names, emails, or locations. Your confession is encrypted and anonymous. Speak freely.
     </div>
@@ -958,6 +958,11 @@ html, body {
         <div class="cat-chip" onclick="selectSubmitCat(this)" data-cat="regret">🙏 Regret</div>
         <div class="cat-chip" onclick="selectSubmitCat(this)" data-cat="wild">🔥 Wild</div>
       </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input type="text" class="form-input" id="confession-title" placeholder="Give your confession a headline..." maxlength="100">
     </div>
 
     <div class="form-group">
@@ -1531,11 +1536,17 @@ function deleteRecording() {
 }
 
 async function submitConfession() {
+  const titleEl = document.getElementById('confession-title');
   const textEl = document.getElementById('confession-text');
+  const title = titleEl.value.trim();
   const text = textEl.value.trim();
   const btn = document.getElementById('submit-btn');
   const btnText = document.getElementById('submit-btn-text');
 
+  if (!title) {
+    showToast('Please enter a title', 'error');
+    return;
+  }
   if (!text && !audioFile) {
     showToast('Write something or record your voice first', 'error');
     return;
@@ -1549,9 +1560,6 @@ async function submitConfession() {
   btnText.textContent = 'Releasing...';
 
   try {
-    let title = text.split('\n')[0] || text;
-    if (title.length > 55) title = title.substring(0, 52) + '...';
-
     const formData = new FormData();
     formData.append('title', title);
     formData.append('category', selectedCat);
@@ -1560,6 +1568,7 @@ async function submitConfession() {
 
     const result = await apiPost('/api/confessions', formData, true);
 
+    titleEl.value = '';
     textEl.value = '';
     deleteRecording();
     selectedCat = null;
