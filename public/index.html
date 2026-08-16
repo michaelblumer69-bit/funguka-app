@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0a">
+<title>FUNGUKA — Unzip Your Soul</title>
+<style>
+:root {
+  --black: #0a0a0a;
+  --card: #111111;
+  --card-hover: #161616;
+  --border: #222222;
+  --border-hover: #333333;
+  --text: #ffffff;
+  --text-muted: #888888;
+  --text-dim: #555555;
+  --pink: #FF006E;
+  --pink-dim: #330011;
+  --purple: #2D1B4E;
+  --orange: #ff6400;
+  --blue: #0096ff;
+  --yellow: #ffc800;
+  --purple-light: #a855f7;
+  --green: #00c853;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--black);
+  color: var(--text);
+  height: 100%;
+  overflow: hidden;
+}
+
+#app {
+  max-width: 420px;
+  margin: 0 auto;
+  height: 100vh;
+  height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  background: var(--black);
+}
+
+/* ================= SCREENS ================= */
+.screen {
+  display: none;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: absolute;
+  top: 0; left: 0;
+  background: var(--black);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.screen::-webkit-scrollbar { display: none; }
+.screen.active {
+  display: block;
+  animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.85; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ================= SPLASH ================= */
+.splash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  text-align: center;
+  padding: 40px 28px;
+}
+
+.splash-logo {
+  width: 88px;
+  height: 88px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28px;
+  box-shadow: 0 0 50px rgba(255,0,110,0.25), 0 8px 32px rgba(0,0,0,0.4);
+  animation: pulse 3s ease-in-out infinite;
+}
+
+.splash-logo svg { width: 44px; height: 44px; }
+
+.splash h1 {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: 5px;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, #fff 30%, var(--pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.splash .tagline {
+  font-size: 15px;
+  color: var(--text-muted);
+  margin-bottom: 48px;
+  line-height: 1.6;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 17px;
+  border-radius: 16px;
+  border: none;
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(255,0,110,0.35); }
+.btn-primary:active { transform: translateY(0) scale(0.98); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-secondary {
+  width: 100%;
+  padding: 15px;
+  border-radius: 16px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 14px;
+  transition: all 0.2s ease;
+}
+.btn-secondary:hover { border-color: var(--pink); color: #fff; background: rgba(255,0,110,0.05); }
+
+.splash-footer {
+  margin-top: 40px;
+  font-size: 12px;
+  color: #3a3a3a;
+  font-weight: 500;
+}
+
+/* ================= HEADER ================= */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(10,10,10,0.92);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header h2 {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  background: linear-gradient(90deg, #fff, var(--pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-title {
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.header-icon, .back-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+  color: var(--text-muted);
+}
+.header-icon:hover, .back-btn:hover {
+  border-color: var(--pink);
+  color: #fff;
+  background: var(--card-hover);
+}
+
+/* ================= SEARCH ================= */
+.search-bar {
+  display: none;
+  padding: 0 20px 12px;
+  background: rgba(10,10,10,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  animation: slideDown 0.25s ease;
+}
+.search-bar.show { display: block; }
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 16px;
+  transition: all 0.2s;
+}
+.search-input-wrapper:focus-within {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px rgba(255,0,110,0.08);
+}
+.search-input-wrapper svg {
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+}
+.search-input::placeholder { color: #444; }
+.search-clear {
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.search-clear:hover { color: var(--pink); background: var(--pink-dim); }
+
+.search-results-header {
+  padding: 12px 20px 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+  display: none;
+}
+.search-results-header.show { display: block; }
+.search-results-header strong { color: var(--pink); }
+
+/* ================= CATEGORIES ================= */
+.categories {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.categories::-webkit-scrollbar { display: none; }
+
+.cat-chip {
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.cat-chip:hover:not(.active) {
+  border-color: var(--border-hover);
+  color: #ccc;
+}
+.cat-chip.active {
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  color: #fff;
+  border-color: transparent;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(255,0,110,0.2);
+}
+
+/* ================= LOADING ================= */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--pink);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+/* ================= CONFESSION CARDS ================= */
+.feed {
+  padding: 0 20px 100px;
+}
+
+.confession-card {
+  background: var(--card);
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideUp 0.4s ease backwards;
+}
+.confession-card:nth-child(1) { animation-delay: 0.05s; }
+.confession-card:nth-child(2) { animation-delay: 0.1s; }
+.confession-card:nth-child(3) { animation-delay: 0.15s; }
+.confession-card:nth-child(4) { animation-delay: 0.2s; }
+.confession-card:nth-child(5) { animation-delay: 0.25s; }
+.confession-card:nth-child(6) { animation-delay: 0.3s; }
+
+.confession-card:hover {
+  border-color: var(--pink);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(255,0,110,0.08);
+}
+.confession-card:active {
+  transform: translateY(-1px) scale(0.995);
+}
+
+.cat-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+.cat-tag.heartbreak { background: rgba(255,0,110,0.12); color: var(--pink); }
+.cat-tag.crime { background: rgba(255,100,0,0.12); color: var(--orange); }
+.cat-tag.dark { background: rgba(168,85,247,0.12); color: var(--purple-light); }
+.cat-tag.regret { background: rgba(0,150,255,0.12); color: var(--blue); }
+.cat-tag.wild { background: rgba(255,200,0,0.12); color: var(--yellow); }
+
+.confession-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin-bottom: 10px;
+  color: #fff;
+}
+
+.confession-card .preview-text {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin-bottom: 18px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.play-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: var(--pink-dim);
+  border: 1px solid rgba(255,0,110,0.25);
+  color: var(--pink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.play-btn:hover {
+  background: rgba(255,0,110,0.15);
+  border-color: var(--pink);
+}
+
+.card-stats {
+  display: flex;
+  gap: 18px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+.card-stats span { display: flex; align-items: center; gap: 5px; }
+
+/* ================= DETAIL VIEW ================= */
+.detail-content {
+  padding: 0 20px 20px;
+}
+
+.detail-content .cat-tag {
+  margin-bottom: 16px;
+  margin-top: 4px;
+}
+
+.detail-title {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.25;
+  margin-bottom: 22px;
+  color: #fff;
+}
+
+.audio-player {
+  background: var(--card);
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+}
+
+.waveform {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 48px;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.wave-bar {
+  width: 3.5px;
+  background: linear-gradient(to top, var(--purple), var(--pink));
+  border-radius: 2px;
+  transition: height 0.3s ease;
+  min-height: 4px;
+}
+.wave-bar.active {
+  animation: waveAnim 0.8s ease-in-out infinite alternate;
+}
+@keyframes waveAnim {
+  from { opacity: 0.5; transform: scaleY(0.7); }
+  to { opacity: 1; transform: scaleY(1); }
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.player-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  box-shadow: 0 4px 20px rgba(255,0,110,0.25);
+}
+.player-btn:hover { transform: scale(1.08); }
+.player-btn:active { transform: scale(0.95); }
+
+.player-time {
+  font-size: 14px;
+  color: var(--text-muted);
+  flex: 1;
+  text-align: center;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #1a1a1a;
+  border-radius: 2px;
+  margin-top: 14px;
+  position: relative;
+  cursor: pointer;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--purple), var(--pink));
+  border-radius: 2px;
+  transition: width 0.1s linear;
+}
+.progress-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--pink);
+  box-shadow: 0 0 10px rgba(255,0,110,0.5);
+  left: 0%;
+  transition: left 0.1s linear;
+}
+
+.full-text {
+  font-size: 15.5px;
+  line-height: 1.75;
+  color: #ccc;
+  margin-bottom: 28px;
+  white-space: pre-line;
+}
+
+.reactions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.react-btn {
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  user-select: none;
+}
+.react-btn:hover {
+  border-color: var(--border-hover);
+  color: #ddd;
+}
+.react-btn.active {
+  background: var(--pink-dim);
+  color: var(--pink);
+  border-color: rgba(255,0,110,0.4);
+}
+.react-btn:active { transform: scale(0.96); }
+
+.react-btn .heart-icon {
+  transition: transform 0.2s;
+}
+.react-btn.active .heart-icon {
+  transform: scale(1.2);
+}
+
+.section-title {
+  font-size: 17px;
+  font-weight: 700;
+  padding: 0 20px 14px;
+  color: #fff;
+}
+
+/* ================= SUBMIT FORM ================= */
+.anon-notice {
+  background: rgba(255,0,110,0.06);
+  border: 1px solid rgba(255,0,110,0.15);
+  border-radius: 14px;
+  padding: 18px;
+  margin: 0 20px 22px;
+  font-size: 13.5px;
+  color: #aaa;
+  line-height: 1.6;
+}
+.anon-notice strong { color: var(--pink); font-weight: 700; }
+
+.form-group { margin-bottom: 22px; padding: 0 20px; }
+.form-label {
+  display: block;
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.form-input, .form-textarea {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: #fff;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s;
+  line-height: 1.6;
+}
+.form-input:focus, .form-textarea:focus {
+  border-color: var(--pink);
+  background: var(--card-hover);
+  box-shadow: 0 0 0 3px rgba(255,0,110,0.08);
+}
+.form-textarea {
+  min-height: 180px;
+  resize: vertical;
+}
+.form-textarea::placeholder { color: #444; }
+
+.record-area {
+  background: var(--card);
+  border-radius: 18px;
+  padding: 36px 20px;
+  text-align: center;
+  border: 2px dashed var(--border);
+  margin: 0 20px 22px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.record-area:hover { border-color: var(--pink); background: var(--card-hover); }
+.record-area.recording {
+  border-color: var(--pink);
+  border-style: solid;
+  background: rgba(255,0,110,0.04);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.record-pulse {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 24px rgba(255,0,110,0.3);
+}
+.record-area.recording .record-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.record-text { color: var(--text-muted); font-size: 15px; font-weight: 500; }
+.record-sub { color: var(--text-dim); font-size: 12.5px; margin-top: 6px; }
+
+.audio-preview {
+  margin: 12px 20px 0;
+  padding: 12px 16px;
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  display: none;
+  align-items: center;
+  gap: 12px;
+}
+.audio-preview.show { display: flex; }
+.audio-preview-name { font-size: 13px; color: var(--text-muted); flex: 1; }
+.audio-preview-delete {
+  color: var(--pink);
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.submit-success {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+.submit-success.show { display: flex; }
+.submit-success .icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a4e1a, var(--green));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  font-size: 32px;
+}
+.submit-success h3 { font-size: 22px; margin-bottom: 8px; }
+.submit-success p { color: var(--text-muted); font-size: 14px; line-height: 1.5; }
+
+/* ================= BOTTOM NAV ================= */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 420px;
+  background: rgba(10,10,10,0.96);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0 24px;
+  z-index: 100;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 16px;
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+.nav-item.active { color: var(--pink); }
+.nav-item:hover:not(.active) { color: #aaa; }
+.nav-icon { width: 24px; height: 24px; }
+
+/* ================= FAB ================= */
+.fab {
+  position: fixed;
+  bottom: 92px;
+  right: 20px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(255,0,110,0.35);
+  z-index: 99;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fab:hover { transform: scale(1.1) rotate(90deg); }
+.fab:active { transform: scale(0.95); }
+
+/* ================= EMPTY STATE ================= */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+.empty-state svg {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+.empty-state h4 { color: var(--text-muted); margin-bottom: 6px; font-size: 16px; }
+.empty-state p { font-size: 13.5px; }
+
+/* ================= TOAST ================= */
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-80px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 14px 24px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 200;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  white-space: nowrap;
+  max-width: 90%;
+  text-align: center;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: var(--green); color: var(--green); }
+.toast.error { border-color: var(--pink); color: var(--pink); }
+
+/* ================= OFFLINE BANNER ================= */
+.offline-banner {
+  background: rgba(255,100,0,0.1);
+  border: 1px solid rgba(255,100,0,0.3);
+  color: var(--orange);
+  padding: 10px 20px;
+  font-size: 13px;
+  text-align: center;
+  display: none;
+}
+.offline-banner.show { display: block; }
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 380px) {
+  .splash h1 { font-size: 32px; }
+  .confession-card h3 { font-size: 15px; }
+  .detail-title { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ==================== SPLASH SCREEN ==================== -->
+<div class="screen active" id="screen-splash">
+  <div class="splash">
+    <div class="splash-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2v20M2 12h20M7 7l10 10M7 17L17 7"/>
+      </svg>
+    </div>
+    <h1>FUNGUKA</h1>
+    <p class="tagline">Unzip your soul.<br>Anonymous confessions, raw and unfiltered.</p>
+    <button class="btn-primary" onclick="goTo('home')">
+      Enter the Vault
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+    <button class="btn-secondary" onclick="goTo('submit')">I Need to Confess</button>
+    <p class="splash-footer">100% anonymous &middot; No accounts &middot; No judgment</p>
+  </div>
+</div>
+
+<!-- ==================== HOME SCREEN ==================== -->
+<div class="screen" id="screen-home">
+  <div class="offline-banner" id="offline-banner">⚠️ You're offline. Some features may not work.</div>
+
+  <div class="header">
+    <h2>FUNGUKA</h2>
+    <div style="display: flex; gap: 8px;">
+      <div class="header-icon" onclick="toggleSearch()" title="Search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      </div>
+      <div class="header-icon" onclick="goTo('submit')" title="Confess">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-bar" id="search-bar">
+    <div class="search-input-wrapper">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" class="search-input" id="search-input" placeholder="Search confessions..." onkeydown="handleSearchKey(event)">
+      <span class="search-clear" onclick="clearSearch()" id="search-clear" style="display:none;">Clear</span>
+    </div>
+  </div>
+
+  <div class="search-results-header" id="search-results-header">
+    Results for <strong id="search-term"></strong>
+  </div>
+
+  <div class="categories">
+    <div class="cat-chip active" onclick="filterCat(this, 'all')">All</div>
+    <div class="cat-chip" onclick="filterCat(this, 'heartbreak')">💔 Heartbreak</div>
+    <div class="cat-chip" onclick="filterCat(this, 'crime')">🤐 Crimes</div>
+    <div class="cat-chip" onclick="filterCat(this, 'dark')">😈 Dark</div>
+    <div class="cat-chip" onclick="filterCat(this, 'regret')">🙏 Regret</div>
+    <div class="cat-chip" onclick="filterCat(this, 'wild')">🔥 Wild</div>
+  </div>
+
+  <div class="feed" id="feed">
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading confessions...</p>
+    </div>
+  </div>
+
+  <button class="fab" onclick="goTo('submit')">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+</div>
+
+<!-- ==================== DETAIL SCREEN ==================== -->
+<div class="screen" id="screen-detail">
+  <div class="header">
+    <div class="back-btn" onclick="goTo('home')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </div>
+    <span class="header-title">Confession</span>
+    <div style="width: 38px;"></div>
+  </div>
+
+  <div class="detail-content" id="detail-content"></div>
+  <div class="section-title">More Like This</div>
+  <div class="feed" id="related-feed" style="padding-bottom: 100px;"></div>
+</div>
+
+<!-- ==================== SUBMIT SCREEN ==================== -->
+<div class="screen" id="screen-submit">
+  <div class="header">
+    <div class="back-btn" onclick="goTo('home')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </div>
+    <span class="header-title">Confess</span>
+    <div style="width: 38px;"></div>
+  </div>
+
+  <div id="submit-form">
+    <div class="anon-notice">
+      <strong>100% Anonymous.</strong> We don't collect names, emails, or locations. Your confession is encrypted and anonymous. Speak freely.
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <div class="categories" style="padding: 0;">
+        <div class="cat-chip" onclick="selectSubmitCat(this)" data-cat="heartbreak">💔 Heartbreak</div>
+        <div class="cat-chip" onclick="selectSubmitCat(this)" data-cat="crime">🤐 Crimes</div>
+        <div class="cat-chip" onclick="selectSubmitCat(this)" data-cat="dark">😈 Dark</div>
+        <div class="cat-chip" onclick="selectSubmitCat(this)" data-cat="regret">🙏 Regret</div>
+        <div class="cat-chip" onclick="selectSubmitCat(this)" data-cat="wild">🔥 Wild</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Your Confession</label>
+      <textarea class="form-textarea" placeholder="Start typing... What have you been holding in? No one will ever know it's you." id="confession-text"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Or Record Your Voice</label>
+    </div>
+    <div class="record-area" id="record-area" onclick="toggleRecord()">
+      <div class="record-pulse" id="record-pulse">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg>
+      </div>
+      <p class="record-text" id="record-text">Tap to record your voice</p>
+      <p class="record-sub">Max 3 minutes</p>
+    </div>
+    <div class="audio-preview" id="audio-preview">
+      <span class="audio-preview-name">🎙 Recording saved</span>
+      <span class="audio-preview-delete" onclick="deleteRecording()">Remove</span>
+    </div>
+
+    <div class="form-group" style="margin-top: 8px;">
+      <button class="btn-primary" id="submit-btn" onclick="submitConfession()">
+        <span id="submit-btn-text">Release It</span>
+      </button>
+      <p style="text-align: center; margin-top: 14px; font-size: 12.5px; color: #3a3a3a;">By submitting, you agree to our content guidelines.</p>
+    </div>
+  </div>
+
+  <div class="submit-success" id="submit-success">
+    <div class="icon">✓</div>
+    <h3>Released.</h3>
+    <p>Your confession is now in the vault.<br>You're lighter now. Breathe.</p>
+    <button class="btn-primary" style="margin-top: 32px;" onclick="goTo('home')">Browse Confessions</button>
+  </div>
+</div>
+
+<!-- ==================== BOTTOM NAV ==================== -->
+<div class="bottom-nav" id="bottom-nav" style="display: none;">
+  <button class="nav-item active" onclick="goTo('home')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Home</span>
+  </button>
+  <button class="nav-item" onclick="goTo('submit')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+    <span>Confess</span>
+  </button>
+  <button class="nav-item" onclick="goTo('saved')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    <span>Saved</span>
+  </button>
+  <button class="nav-item" onclick="showToast('Coming soon', 'success')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <span>Settings</span>
+  </button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== CONFIG ====================
+const API_BASE = '';
+
+// ==================== STATE ====================
+let confessions = [];
+let currentFilter = 'all';
+let currentSearch = '';
+let selectedCat = null;
+let isRecording = false;
+let mediaRecorder = null;
+let recordedChunks = [];
+let audioBlob = null;
+let audioFile = null;
+let currentAudio = null;
+let isPlaying = false;
+let playInterval = null;
+let currentConfessionId = null;
+let searchVisible = false;
+
+// ==================== NAVIGATION ====================
+function goTo(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('screen-' + screen);
+  if (target) target.classList.add('active');
+
+  const nav = document.getElementById('bottom-nav');
+  nav.style.display = screen === 'splash' ? 'none' : 'flex';
+
+  document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+  if (screen === 'home') document.querySelectorAll('.nav-item')[0].classList.add('active');
+  if (screen === 'submit') document.querySelectorAll('.nav-item')[1].classList.add('active');
+  if (screen === 'saved') document.querySelectorAll('.nav-item')[2].classList.add('active');
+
+  document.getElementById('app').scrollTop = 0;
+  if (target) target.scrollTop = 0;
+
+  stopAudio();
+  if (screen === 'home') {
+    loadConfessions();
+  }
+}
+
+// ==================== SEARCH ====================
+function toggleSearch() {
+  searchVisible = !searchVisible;
+  const bar = document.getElementById('search-bar');
+  bar.classList.toggle('show', searchVisible);
+  if (searchVisible) {
+    setTimeout(() => document.getElementById('search-input').focus(), 100);
+  }
+}
+
+function handleSearchKey(e) {
+  if (e.key === 'Enter') {
+    const term = e.target.value.trim();
+    if (term) {
+      currentSearch = term;
+      document.getElementById('search-clear').style.display = 'block';
+      document.getElementById('search-term').textContent = '"' + term + '"';
+      document.getElementById('search-results-header').classList.add('show');
+      loadConfessions();
+    }
+  }
+}
+
+function clearSearch() {
+  currentSearch = '';
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  document.getElementById('search-results-header').classList.remove('show');
+  loadConfessions();
+}
+
+// ==================== API HELPERS ====================
+async function apiGet(endpoint) {
+  const res = await fetch(API_BASE + endpoint, { credentials: 'include' });
+  if (!res.ok) throw new Error('API error');
+  return res.json();
+}
+
+async function apiPost(endpoint, data, isForm = false) {
+  const options = { method: 'POST', credentials: 'include' };
+  if (isForm) {
+    options.body = data;
+  } else {
+    options.headers = { 'Content-Type': 'application/json' };
+    options.body = JSON.stringify(data);
+  }
+  const res = await fetch(API_BASE + endpoint, options);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Request failed' }));
+    throw new Error(err.error || 'Request failed');
+  }
+  return res.json();
+}
+
+// ==================== FORMAT NUMBERS ====================
+function formatNum(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'K';
+  return n.toString();
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ==================== LOAD CONFESSIONS ====================
+async function loadConfessions() {
+  const feed = document.getElementById('feed');
+  feed.innerHTML = `
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading confessions...</p>
+    </div>
+  `;
+
+  try {
+    let url = `/api/confessions?category=${currentFilter}&limit=50`;
+    if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+
+    const data = await apiGet(url);
+    confessions = data.confessions;
+    renderFeed();
+  } catch (err) {
+    feed.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6v6l4 2"/></svg>
+        <h4>Couldn't load</h4>
+        <p>Check your connection and try again.</p>
+      </div>
+    `;
+    showToast('Failed to load confessions', 'error');
+  }
+}
+
+// ==================== RENDER FEED ====================
+function renderFeed() {
+  const feed = document.getElementById('feed');
+
+  if (confessions.length === 0) {
+    feed.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6v6l4 2"/></svg>
+        <h4>${currentSearch ? 'No results found' : 'No confessions yet'}</h4>
+        <p>${currentSearch ? 'Try a different search term.' : 'Be the first to unzip your soul.'}</p>
+      </div>
+    `;
+    return;
+  }
+
+  feed.innerHTML = confessions.map((c, i) => `
+    <div class="confession-card" onclick="openDetail(${c.id})" style="animation-delay: ${i * 0.05}s">
+      <span class="cat-tag ${c.category}">${c.catLabel}</span>
+      <h3>${escapeHtml(c.title)}</h3>
+      <p class="preview-text">${escapeHtml(c.preview)}</p>
+      <div class="card-footer">
+        <div class="play-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          ${c.duration}${c.audiourl ? ' 🔊' : ''}
+        </div>
+        <div class="card-stats">
+          <span>▶ ${formatNum(c.plays)}</span>
+          <span>♡ ${formatNum(c.reactions)}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ==================== FILTER ====================
+function filterCat(el, cat) {
+  document.querySelectorAll('#screen-home .cat-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentFilter = cat;
+  loadConfessions();
+}
+
+// ==================== DETAIL VIEW ====================
+async function openDetail(id) {
+  currentConfessionId = id;
+
+  apiPost(`/api/confessions/${id}/play`).catch(() => {});
+
+  const c = confessions.find(x => x.id === id);
+  if (c) c.plays++;
+
+  const content = document.getElementById('detail-content');
+
+  let waveformHTML = '';
+  for (let i = 0; i < 45; i++) {
+    const h = 6 + Math.random() * 38;
+    waveformHTML += `<div class="wave-bar" style="height: ${h}px" id="wave-${i}"></div>`;
+  }
+
+  const confession = c || await apiGet(`/api/confessions/${id}`).catch(() => null);
+  if (!confession) {
+    showToast('Confession not found', 'error');
+    return;
+  }
+
+  content.innerHTML = `
+    <span class="cat-tag ${confession.category}">${confession.catLabel}</span>
+    <h2 class="detail-title">${escapeHtml(confession.title)}</h2>
+
+    <div class="audio-player">
+      <div class="waveform">${waveformHTML}</div>
+      <div class="player-controls">
+        <button class="player-btn" onclick="togglePlayAudio(this, ${confession.id}, '${confession.audiourl || ''}', '${confession.duration}')" id="play-btn-${confession.id}">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white" id="play-icon-${confession.id}"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+        <span class="player-time" id="player-time-${confession.id}">0:00 / ${confession.duration}</span>
+      </div>
+      <div class="progress-bar" onclick="seekAudio(event, ${confession.id})">
+        <div class="progress-fill" id="progress-fill-${confession.id}"></div>
+        <div class="progress-thumb" id="progress-thumb-${confession.id}"></div>
+      </div>
+    </div>
+
+    <p class="full-text">${escapeHtml(confession.fullText).replace(/\n/g, '<br>')}</p>
+
+    <div class="reactions">
+      <button class="react-btn ${confession.userReacted ? 'active' : ''}" onclick="toggleReact(this, ${confession.id})">
+        <svg class="heart-icon" width="15" height="15" viewBox="0 0 24 24" fill="${confession.userReacted ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        I feel you (${formatNum(confession.reactions)})
+      </button>
+      <button class="react-btn" onclick="shareConfession(${confession.id})">Share</button>
+    </div>
+  `;
+
+  loadRelated(id, confession.category);
+  goTo('detail');
+}
+
+async function loadRelated(id, category) {
+  try {
+    const related = await apiGet(`/api/confessions/${id}/related`);
+    document.getElementById('related-feed').innerHTML = related.length ? related.map(c => `
+      <div class="confession-card" onclick="openDetail(${c.id})">
+        <span class="cat-tag ${c.category}">${c.catLabel}</span>
+        <h3>${escapeHtml(c.title)}</h3>
+        <p class="preview-text">${escapeHtml(c.preview)}</p>
+        <div class="card-footer">
+          <div class="play-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>${c.duration}${c.audiourl ? ' 🔊' : ''}</div>
+          <div class="card-stats"><span>▶ ${formatNum(c.plays)}</span><span>♡ ${formatNum(c.reactions)}</span></div>
+        </div>
+      </div>
+    `).join('') : '<p style="color:#555;padding:0 20px;font-size:13px;">No related confessions yet.</p>';
+  } catch (err) {
+    document.getElementById('related-feed').innerHTML = '';
+  }
+}
+
+// ==================== AUDIO PLAYER ====================
+let audioElement = null;
+let audioDuration = 0;
+
+function parseDuration(dur) {
+  const parts = dur.split(':');
+  return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+}
+
+function formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function togglePlayAudio(btn, id, audioUrl, durationStr) {
+  // If already playing this same audio, pause it
+  if (isPlaying && currentAudio === id && audioElement) {
+    audioElement.pause();
+    stopAudio();
+    return;
+  }
+
+  // If playing a different audio, stop it first
+  if (isPlaying && currentAudio !== id) {
+    stopAudio();
+  }
+
+  // If there's a real audio URL, play it
+  if (audioUrl) {
+    playRealAudio(id, audioUrl, durationStr);
+  } else {
+    // No audio file — use simulation (for seed confessions)
+    playSimulatedAudio(id, durationStr);
+  }
+}
+
+function playRealAudio(id, audioUrl, durationStr) {
+  isPlaying = true;
+  currentAudio = id;
+
+  // Create or reuse audio element
+  if (!audioElement) {
+    audioElement = new Audio();
+  }
+
+  audioElement.src = audioUrl;
+  audioElement.play().catch(err => {
+    console.error('Audio play error:', err);
+    showToast('Could not play audio', 'error');
+    stopAudio();
+    return;
+  });
+
+  // Update play button to pause icon
+  const icon = document.getElementById('play-icon-' + id);
+  if (icon) icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+
+  // Animate waveform
+  document.querySelectorAll('.wave-bar').forEach((bar, i) => {
+    setTimeout(() => bar.classList.add('active'), i * 30);
+  });
+
+  const totalSec = parseDuration(durationStr);
+  const timeDisplay = document.getElementById('player-time-' + id);
+
+  // Update progress in real-time
+  playInterval = setInterval(() => {
+    if (!audioElement) return;
+
+    const current = audioElement.currentTime || 0;
+    const duration = audioElement.duration || totalSec;
+    const pct = (current / duration) * 100;
+
+    const fill = document.getElementById('progress-fill-' + id);
+    const thumb = document.getElementById('progress-thumb-' + id);
+
+    if (fill) fill.style.width = pct + '%';
+    if (thumb) thumb.style.left = pct + '%';
+    if (timeDisplay) {
+      timeDisplay.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
+    }
+
+    // Auto-stop when finished
+    if (audioElement.ended || current >= duration) {
+      stopAudio();
+    }
+  }, 100);
+
+  // Also listen for natural end
+  audioElement.onended = () => stopAudio();
+}
+
+function playSimulatedAudio(id, durationStr) {
+  isPlaying = true;
+  currentAudio = id;
+  const icon = document.getElementById('play-icon-' + id);
+  if (icon) icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+
+  document.querySelectorAll('.wave-bar').forEach((bar, i) => {
+    setTimeout(() => bar.classList.add('active'), i * 30);
+  });
+
+  const totalSec = parseDuration(durationStr);
+  const timeDisplay = document.getElementById('player-time-' + id);
+  let progress = 0;
+  const step = 100 / (totalSec * 10); // Update 10 times per second
+
+  playInterval = setInterval(() => {
+    progress += step;
+    if (progress >= 100) {
+      stopAudio();
+      return;
+    }
+    const fill = document.getElementById('progress-fill-' + id);
+    const thumb = document.getElementById('progress-thumb-' + id);
+    if (fill) fill.style.width = progress + '%';
+    if (thumb) thumb.style.left = progress + '%';
+    if (timeDisplay) {
+      const currentSec = Math.floor((progress / 100) * totalSec);
+      timeDisplay.textContent = `${formatTime(currentSec)} / ${durationStr}`;
+    }
+  }, 100);
+}
+
+function stopAudio() {
+  isPlaying = false;
+  if (playInterval) { clearInterval(playInterval); playInterval = null; }
+
+  if (audioElement) {
+    audioElement.pause();
+    audioElement.currentTime = 0;
+    audioElement.onended = null;
+  }
+
+  if (currentAudio) {
+    const icon = document.getElementById('play-icon-' + currentAudio);
+    if (icon) icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+    document.querySelectorAll('.wave-bar').forEach(bar => bar.classList.remove('active'));
+  }
+  currentAudio = null;
+}
+
+function seekAudio(e, id) {
+  const bar = e.currentTarget;
+  const rect = bar.getBoundingClientRect();
+  const pct = ((e.clientX - rect.left) / rect.width);
+
+  // If real audio is playing, seek to that position
+  if (audioElement && currentAudio === id) {
+    const duration = audioElement.duration || parseDuration(document.getElementById('player-time-' + id)?.textContent?.split(' / ')[1] || '2:00');
+    audioElement.currentTime = pct * duration;
+  }
+
+  const fill = document.getElementById('progress-fill-' + id);
+  const thumb = document.getElementById('progress-thumb-' + id);
+  if (fill) fill.style.width = (pct * 100) + '%';
+  if (thumb) thumb.style.left = (pct * 100) + '%';
+}
+
+// ==================== REACTIONS ====================
+async function toggleReact(btn, id) {
+  try {
+    const result = await apiPost(`/api/confessions/${id}/react`, { type: 'feel' });
+
+    btn.classList.toggle('active', result.reacted);
+    const heart = btn.querySelector('.heart-icon');
+    if (heart) {
+      heart.setAttribute('fill', result.reacted ? 'currentColor' : 'none');
+    }
+
+    const match = btn.textContent.match(/\d+/);
+    btn.innerHTML = `
+      <svg class="heart-icon" width="15" height="15" viewBox="0 0 24 24" fill="${result.reacted ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      I feel you (${formatNum(result.reactions)})
+    `;
+
+    const c = confessions.find(x => x.id === id);
+    if (c) {
+      c.reactions = result.reactions;
+      c.userReacted = result.reacted;
+    }
+  } catch (err) {
+    showToast('Failed to react', 'error');
+  }
+}
+
+function shareConfession(id) {
+  const url = `${window.location.origin}/confession/${id}`;
+  if (navigator.share) {
+    navigator.share({ title: 'FUNGUKA Confession', url });
+  } else {
+    navigator.clipboard.writeText(url);
+    showToast('Link copied to clipboard', 'success');
+  }
+}
+
+// ==================== SUBMIT FORM ====================
+function selectSubmitCat(el) {
+  document.querySelectorAll('#screen-submit .cat-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedCat = el.dataset.cat;
+}
+
+async function toggleRecord() {
+  const area = document.getElementById('record-area');
+  const text = document.getElementById('record-text');
+  const preview = document.getElementById('audio-preview');
+
+  if (!isRecording) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      recordedChunks = [];
+
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        audioBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+        audioFile = new File([audioBlob], 'confession.webm', { type: 'audio/webm' });
+        preview.classList.add('show');
+      };
+
+      mediaRecorder.start();
+      isRecording = true;
+      area.classList.add('recording');
+      text.textContent = 'Recording... Tap to stop';
+      text.style.color = '#FF006E';
+
+      setTimeout(() => { if (isRecording) toggleRecord(); }, 180000);
+    } catch (err) {
+      showToast('Microphone access denied', 'error');
+    }
+  } else {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    }
+    isRecording = false;
+    area.classList.remove('recording');
+    text.textContent = 'Recording saved. Tap to re-record.';
+    text.style.color = '#888';
+  }
+}
+
+function deleteRecording() {
+  audioBlob = null;
+  audioFile = null;
+  recordedChunks = [];
+  document.getElementById('audio-preview').classList.remove('show');
+  document.getElementById('record-text').textContent = 'Tap to record your voice';
+}
+
+async function submitConfession() {
+  const textEl = document.getElementById('confession-text');
+  const text = textEl.value.trim();
+  const btn = document.getElementById('submit-btn');
+  const btnText = document.getElementById('submit-btn-text');
+
+  if (!text && !audioFile) {
+    showToast('Write something or record your voice first', 'error');
+    return;
+  }
+  if (!selectedCat) {
+    showToast('Pick a category first', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btnText.textContent = 'Releasing...';
+
+  try {
+    let title = text.split('\n')[0] || text;
+    if (title.length > 55) title = title.substring(0, 52) + '...';
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('category', selectedCat);
+    formData.append('fullText', text);
+    if (audioFile) formData.append('audio', audioFile);
+
+    const result = await apiPost('/api/confessions', formData, true);
+
+    textEl.value = '';
+    deleteRecording();
+    selectedCat = null;
+    document.querySelectorAll('#screen-submit .cat-chip').forEach(c => c.classList.remove('active'));
+
+    document.getElementById('submit-form').style.display = 'none';
+    document.getElementById('submit-success').classList.add('show');
+
+    showToast(result.flagged ? 'Posted — under review' : 'Confession released', 'success');
+  } catch (err) {
+    showToast(err.message || 'Failed to submit', 'error');
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = 'Release It';
+  }
+}
+
+// ==================== TOAST ====================
+function showToast(message, type) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = 'toast ' + type;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+// ==================== OFFLINE DETECTION ====================
+function updateOnlineStatus() {
+  const banner = document.getElementById('offline-banner');
+  banner.classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+// ==================== INIT ====================
+loadConfessions();
+</script>
+</body>
+</html>

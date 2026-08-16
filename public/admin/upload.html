@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FUNGUKA Admin — Upload Audio</title>
+<style>
+:root {
+  --black: #0a0a0a;
+  --card: #111111;
+  --border: #222222;
+  --text: #ffffff;
+  --text-muted: #888888;
+  --pink: #FF006E;
+  --purple: #2D1B4E;
+  --green: #00c853;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--black);
+  color: var(--text);
+  padding: 40px 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, #fff, var(--pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.subtitle { color: var(--text-muted); margin-bottom: 32px; }
+.confession-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.confession-item h3 {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+.confession-item .cat {
+  font-size: 11px;
+  color: var(--pink);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.confession-item .preview {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.upload-area {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.upload-area:hover {
+  border-color: var(--pink);
+  background: rgba(255,0,110,0.03);
+}
+.upload-area.has-audio {
+  border-color: var(--green);
+  background: rgba(0,200,83,0.05);
+}
+.upload-area input { display: none; }
+.upload-text { color: var(--text-muted); font-size: 14px; }
+.upload-text strong { color: var(--pink); }
+.audio-status {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.audio-status.has-audio { color: var(--green); }
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 200;
+  transition: all 0.3s;
+}
+.toast.success { border-color: var(--green); color: var(--green); }
+.toast.error { border-color: var(--pink); color: var(--pink); }
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--pink);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:30px;padding-bottom:20px;border-bottom:1px solid var(--border);">
+  <div>
+    <h1 style="font-size:26px;margin-bottom:4px;background:linear-gradient(90deg, #fff, var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🎙️ Upload Audio</h1>
+    <p class="subtitle">Record confessions with your voice, upload them here</p>
+  </div>
+  <div style="display:flex;gap:12px;">
+    <a href="/admin/upload.html" style="color:var(--pink);text-decoration:none;font-size:13px;padding:8px 16px;border-radius:10px;border:1px solid var(--pink);background:var(--pink-dim);">🎙️ Upload Audio</a>
+    <a href="/admin/dashboard.html" style="color:var(--text-muted);text-decoration:none;font-size:13px;padding:8px 16px;border-radius:10px;border:1px solid var(--border);transition:all 0.2s;">📋 Dashboard</a>
+  </div>
+</div>
+<div id="confessions-list"></div>
+<div class="toast" id="toast" style="display:none;"></div>
+
+<script>
+const API_BASE = '';
+
+async function loadConfessions() {
+  try {
+    const res = await fetch('/api/confessions?limit=50');
+    const data = await res.json();
+    renderList(data.confessions);
+  } catch (err) {
+    showToast('Failed to load confessions', 'error');
+  }
+}
+
+function renderList(confessions) {
+  const container = document.getElementById('confessions-list');
+  container.innerHTML = confessions.map(c => `
+    <div class="confession-item" data-id="${c.id}">
+      <h3>${escapeHtml(c.title)}</h3>
+      <div class="cat">${c.catLabel}</div>
+      <div class="preview">${escapeHtml(c.preview)}</div>
+      <div class="upload-area ${c.audiourl ? 'has-audio' : ''}" onclick="document.getElementById('file-${c.id}').click()">
+        <input type="file" id="file-${c.id}" accept="audio/*" onchange="uploadAudio(${c.id}, this)">
+        <div class="upload-text">
+          ${c.audiourl 
+            ? '<strong>✓ Audio attached</strong><br>Click to replace with new recording' 
+            : '<strong>+ Click to upload audio</strong><br>MP3, WAV, or WebM'}
+        </div>
+      </div>
+      <div class="audio-status ${c.audiourl ? 'has-audio' : ''}" id="status-${c.id}">
+        ${c.audiourl ? '🎙️ Audio URL: ' + c.audiourl.substring(0, 50) + '...' : '⏳ No audio uploaded yet'}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function uploadAudio(id, input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const btn = input.closest('.confession-item').querySelector('.upload-area');
+  const status = document.getElementById('status-' + id);
+  const originalText = btn.innerHTML;
+
+  btn.innerHTML = '<div class="upload-text"><span class="spinner"></span>Uploading to Cloudinary...</div>';
+
+  const formData = new FormData();
+  formData.append('audio', file);
+  formData.append('confessionId', id);
+
+  try {
+    const res = await fetch('/api/admin/upload-audio', {
+      method: 'POST',
+      body: formData
+    });
+    const result = await res.json();
+
+    if (result.success) {
+      showToast('Audio uploaded successfully!', 'success');
+      btn.classList.add('has-audio');
+      btn.innerHTML = '<div class="upload-text"><strong>✓ Audio attached</strong><br>Click to replace with new recording</div>';
+      status.classList.add('has-audio');
+      status.textContent = '🎙️ Audio uploaded! Refresh the app to hear it.';
+    } else {
+      throw new Error(result.error || 'Upload failed');
+    }
+  } catch (err) {
+    showToast(err.message || 'Upload failed', 'error');
+    btn.innerHTML = originalText;
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function showToast(message, type) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = 'toast ' + type;
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 3000);
+}
+
+loadConfessions();
+</script>
+</body>
+</html>
