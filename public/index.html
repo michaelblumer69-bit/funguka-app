@@ -1070,7 +1070,7 @@ html, body {
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg>
       </div>
       <p class="record-text" id="record-text">Tap to record your voice</p>
-      <p class="record-sub">Max 3 minutes</p>
+      <p class="record-sub">Max 10 minutes</p>
     </div>
     <div class="audio-preview" id="audio-preview">
       <span class="audio-preview-name">🎙 Recording saved</span>
@@ -1716,7 +1716,7 @@ async function toggleRecord() {
       text.textContent = 'Recording... Tap to stop';
       text.style.color = '#FF006E';
 
-      setTimeout(() => { if (isRecording) toggleRecord(); }, 180000);
+      setTimeout(() => { if (isRecording) toggleRecord(); }, 600000);
     } catch (err) {
       showToast('Microphone access denied', 'error');
     }
