@@ -22,7 +22,6 @@ cloudinary.config({
 });
 
 // ==================== SUPABASE / POSTGRESQL ====================
-// Try connection pooler first (better for serverless), fallback to direct
 const poolConfig = {
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
@@ -33,7 +32,6 @@ const poolConfig = {
 
 const pool = new Pool(poolConfig);
 
-// Helper for queries with retry
 async function query(text, params, retries = 3) {
   for (let i = 0; i < retries; i++) {
     try {
@@ -50,7 +48,6 @@ async function query(text, params, retries = 3) {
 async function initDatabase() {
   for (let attempt = 1; attempt <= 5; attempt++) {
     try {
-      // Confessions table
       await query(`
         CREATE TABLE IF NOT EXISTS confessions (
           id SERIAL PRIMARY KEY,
@@ -70,7 +67,6 @@ async function initDatabase() {
         )
       `);
 
-      // Reactions table
       await query(`
         CREATE TABLE IF NOT EXISTS reactions (
           id SERIAL PRIMARY KEY,
@@ -82,7 +78,6 @@ async function initDatabase() {
         )
       `);
 
-      // Sessions table
       await query(`
         CREATE TABLE IF NOT EXISTS sessions (
           id SERIAL PRIMARY KEY,
@@ -92,7 +87,6 @@ async function initDatabase() {
         )
       `);
 
-      // Indexes for search performance
       await query(`CREATE INDEX IF NOT EXISTS idx_confessions_category ON confessions(category)`);
       await query(`CREATE INDEX IF NOT EXISTS idx_confessions_flagged ON confessions(isFlagged)`);
       await query(`CREATE INDEX IF NOT EXISTS idx_confessions_created ON confessions(createdAt DESC)`);
@@ -104,7 +98,6 @@ async function initDatabase() {
       console.error(`Database init attempt ${attempt} failed:`, err.message);
       if (attempt === 5) {
         console.error('❌ Could not connect to database after 5 attempts');
-        console.error('Please check your DATABASE_URL and ensure Supabase is accessible');
         process.exit(1);
       }
       await new Promise(r => setTimeout(r, 2000 * attempt));
@@ -238,14 +231,18 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Get confessions (with filtering + pagination + SEARCH)
+// Get confessions (public + admin)
 app.get('/api/confessions', async (req, res) => {
   try {
     const { category, page = 1, limit = 20, search } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
-    let whereClause = 'WHERE isFlagged = false';
-    let countWhere = 'WHERE isFlagged = false';
+    // Check if admin is requesting
+    const adminToken = req.headers['x-admin-token'];
+    const isAdmin = adminToken === process.env.ADMIN_TOKEN || adminToken === 'funguka-admin-2024';
+
+    let whereClause = isAdmin ? 'WHERE 1=1' : 'WHERE isFlagged = false';
+    let countWhere = isAdmin ? 'WHERE 1=1' : 'WHERE isFlagged = false';
     const params = [];
     let paramIndex = 1;
 
@@ -275,9 +272,19 @@ app.get('/api/confessions', async (req, res) => {
     const rows = rowsResult.rows;
     const countRow = countResult.rows[0];
 
-    const confessionIds = rows.map(r => r.id);
+    // Fix PostgreSQL lowercase column names
+    const fixedRows = rows.map(r => ({
+      ...r,
+      catLabel: r.catlabel || r.catLabel,
+      audioUrl: r.audiourl || r.audioUrl,
+      fullText: r.fulltext || r.fullText,
+      createdAt: r.createdat || r.createdAt,
+      isFlagged: r.isflagged !== undefined ? r.isflagged : r.isFlagged
+    }));
+
+    const confessionIds = fixedRows.map(r => r.id);
     let userReactions = [];
-    if (confessionIds.length > 0) {
+    if (confessionIds.length > 0 && !isAdmin) {
       const placeholders = confessionIds.map((_, i) => `$${i + 2}`).join(',');
       const reactionResult = await query(
         `SELECT confessionId, type FROM reactions WHERE sessionId = $1 AND confessionId IN (${placeholders})`,
@@ -289,7 +296,7 @@ app.get('/api/confessions', async (req, res) => {
     const reactedSet = new Set(userReactions.map(r => r.confessionid));
 
     res.json({
-      confessions: rows.map(r => ({ ...r, userReacted: reactedSet.has(r.id) })),
+      confessions: fixedRows.map(r => ({ ...r, userReacted: reactedSet.has(r.id) })),
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -310,13 +317,23 @@ app.get('/api/confessions/:id', async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
 
     const row = result.rows[0];
+    // Fix column casing
+    const confession = {
+      ...row,
+      catLabel: row.catlabel || row.catLabel,
+      audioUrl: row.audiourl || row.audioUrl,
+      fullText: row.fulltext || row.fullText,
+      createdAt: row.createdat || row.createdAt,
+      isFlagged: row.isflagged !== undefined ? row.isflagged : row.isFlagged
+    };
+
     const reactionResult = await query(
       'SELECT type FROM reactions WHERE confessionId = $1 AND sessionId = $2',
       [req.params.id, req.session.anonId]
     );
 
-    row.userReacted = reactionResult.rows.length > 0;
-    res.json(row);
+    confession.userReacted = reactionResult.rows.length > 0;
+    res.json(confession);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch confession' });
   }
@@ -374,7 +391,18 @@ app.get('/api/confessions/:id/related', async (req, res) => {
       'SELECT * FROM confessions WHERE category = $1 AND id != $2 AND isFlagged = false ORDER BY RANDOM() LIMIT 3',
       [category, req.params.id]
     );
-    res.json(result.rows);
+    
+    // Fix column casing
+    const fixedRows = result.rows.map(r => ({
+      ...r,
+      catLabel: r.catlabel || r.catLabel,
+      audioUrl: r.audiourl || r.audioUrl,
+      fullText: r.fulltext || r.fullText,
+      createdAt: r.createdat || r.createdAt,
+      isFlagged: r.isflagged !== undefined ? r.isflagged : r.isFlagged
+    }));
+    
+    res.json(fixedRows);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch related' });
   }
@@ -455,13 +483,12 @@ app.post('/api/confessions', upload.single('audio'), async (req, res) => {
 
 async function adminAuth(req, res, next) {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const adminToken = req.headers['x-admin-token'];
+  
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : adminToken;
+  
+  if (!token || (token !== process.env.ADMIN_TOKEN && token !== 'funguka-admin-2024')) {
     return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const token = authHeader.split(' ')[1];
-  if (token !== process.env.ADMIN_TOKEN && token !== 'funguka-admin-2024') {
-    return res.status(401).json({ error: 'Invalid token' });
   }
   next();
 }
@@ -493,7 +520,6 @@ app.get('/api/admin/stats', adminAuth, async (req, res) => {
   try {
     const total = await query('SELECT COUNT(*) as count FROM confessions');
     const flagged = await query('SELECT COUNT(*) as count FROM confessions WHERE isFlagged = true');
-    const hidden = await query('SELECT COUNT(*) as count FROM confessions WHERE isFlagged = true');
     const totalPlays = await query('SELECT COALESCE(SUM(plays), 0) as total FROM confessions');
     const totalReactions = await query('SELECT COALESCE(SUM(reactions), 0) as total FROM confessions');
     const sessions = await query('SELECT COUNT(*) as count FROM sessions');
@@ -514,19 +540,28 @@ app.get('/api/admin/stats', adminAuth, async (req, res) => {
 app.get('/api/admin/confessions', adminAuth, async (req, res) => {
   try {
     const result = await query('SELECT * FROM confessions ORDER BY createdAt DESC');
-    res.json(result.rows);
+    
+    // Fix column casing
+    const fixedRows = result.rows.map(r => ({
+      ...r,
+      catLabel: r.catlabel || r.catLabel,
+      audioUrl: r.audiourl || r.audioUrl,
+      fullText: r.fulltext || r.fullText,
+      createdAt: r.createdat || r.createdAt,
+      isFlagged: r.isflagged !== undefined ? r.isflagged : r.isFlagged
+    }));
+    
+    res.json(fixedRows);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch confessions' });
   }
 });
 
-// Delete a confession
+// Delete a confession (admin)
 app.delete('/api/admin/confessions/:id', adminAuth, async (req, res) => {
   try {
-    // Get audio URL first to delete from Cloudinary
     const confession = await query('SELECT audioUrl FROM confessions WHERE id = $1', [req.params.id]);
     if (confession.rows.length > 0 && confession.rows[0].audiourl) {
-      // Extract public_id from Cloudinary URL and delete
       try {
         const url = confession.rows[0].audiourl;
         const publicId = url.split('/').slice(-2).join('/').split('.')[0];
@@ -569,7 +604,7 @@ app.post('/api/admin/confessions/:id/toggle', adminAuth, async (req, res) => {
   }
 });
 
-// ==================== ADMIN AUDIO UPLOAD ====================
+// Admin audio upload
 app.post('/api/admin/upload-audio', upload.single('audio'), async (req, res) => {
   try {
     const { confessionId } = req.body;
@@ -583,7 +618,6 @@ app.post('/api/admin/upload-audio', upload.single('audio'), async (req, res) => 
       return res.status(400).json({ error: 'Confession ID required' });
     }
 
-    // Upload to Cloudinary
     let audioUrl = null;
     try {
       const uploadResult = await cloudinary.uploader.upload(req.file.path, {
@@ -600,7 +634,6 @@ app.post('/api/admin/upload-audio', upload.single('audio'), async (req, res) => 
       return res.status(500).json({ error: 'Failed to upload to Cloudinary' });
     }
 
-    // Update confession in database
     await query(
       'UPDATE confessions SET audioUrl = $1 WHERE id = $2',
       [audioUrl, confessionId]
@@ -626,59 +659,7 @@ app.use((err, req, res, next) => {
 // ==================== START ====================
 initDatabase().then(() => {
   seedData().then(() => {
-    // Admin: Delete confession
-app.delete('/api/confessions/:id', async (req, res) => {
-  const token = req.headers['x-admin-token'];
-  if (token !== process.env.ADMIN_TOKEN) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-
-  const { id } = req.params;
-  try {
-    // Get audio URL first to delete from Cloudinary
-    const result = await pool.query('SELECT audioUrl FROM confessions WHERE id = $1', [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Not found' });
-    }
-
-    const audioUrl = result.rows[0].audioUrl;
-    
-    // Delete from Cloudinary if audio exists
-    if (audioUrl && audioUrl.includes('cloudinary')) {
-      try {
-        const publicId = audioUrl.split('/').pop().split('.')[0];
-        await cloudinary.uploader.destroy(publicId, { resource_type: 'video' });
-      } catch (e) {
-        console.log('Cloudinary delete skipped:', e.message);
-      }
-    }
-
-    // Delete from database
-    await pool.query('DELETE FROM confessions WHERE id = $1', [id]);
-    res.status(204).send();
-  } catch (err) {
-    console.error('Delete error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Admin: Toggle hide/show
-app.patch('/api/confessions/:id/hide', async (req, res) => {
-  const token = req.headers['x-admin-token'];
-  if (token !== process.env.ADMIN_TOKEN) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-
-  const { id } = req.params;
-  const { hidden } = req.body;
-  try {
-    await pool.query('UPDATE confessions SET hidden = $1 WHERE id = $2', [hidden, id]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('Hide error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});app.listen(PORT, () => {
+    app.listen(PORT, () => {
       console.log('');
       console.log('╔══════════════════════════════════════════╗');
       console.log('║         FUNGUKA IS LIVE v2.0             ║');
