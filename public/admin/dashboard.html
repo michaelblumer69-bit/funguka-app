@@ -83,7 +83,7 @@
   <script>
     const ADMIN_TOKEN = 'funguka-admin-2024';
     let confessions = [];
-    let pending = null; // { type: 'delete'|'hide', id: number, btn: HTMLElement }
+    let pending = null;
 
     async function api(url, opts = {}) {
       const res = await fetch(url, {
@@ -104,7 +104,7 @@
     async function loadData() {
       try {
         const data = await api('/api/confessions') || [];
-confessions = Array.isArray(data) ? data : (data.confessions || []);
+        confessions = Array.isArray(data) ? data : (data.confessions || []);
         render();
       } catch (e) {
         showToast('Failed to load: ' + e.message, true);
@@ -114,7 +114,7 @@ confessions = Array.isArray(data) ? data : (data.confessions || []);
 
     function render() {
       const total = confessions.length;
-      const hidden = confessions.filter(c => c.hidden).length;
+      const hidden = confessions.filter(c => c.isFlagged).length;
       const totalPlays = confessions.reduce((s, c) => s + (c.plays || 0), 0);
       const totalReactions = confessions.reduce((s, c) => s + (c.reactions || 0), 0);
 
@@ -132,19 +132,19 @@ confessions = Array.isArray(data) ? data : (data.confessions || []);
       }
 
       tbody.innerHTML = confessions.map(c => `
-        <tr class="${c.hidden ? 'hidden-row' : ''}" data-id="${c.id}">
+        <tr class="${c.isFlagged ? 'hidden-row' : ''}" data-id="${c.id}">
           <td>#${c.id}</td>
-          <td>${escapeHtml(c.title)}</td>
-          <td>${escapeHtml(c.category)}</td>
+          <td>${escapeHtml(c.title || '.')}</td>
+          <td>${escapeHtml(c.catLabel || c.category || '')}</td>
           <td>${c.plays || 0}</td>
           <td>${c.reactions || 0}</td>
-          <td>${c.audio_url ? '🔊' : '—'}</td>
-          <td>${c.hidden ? '🙈 Hidden' : '👁️ Visible'}</td>
+          <td>${c.audioUrl ? '🔊' : '—'}</td>
+          <td>${c.isFlagged ? '🙈 Hidden' : '👁️ Visible'}</td>
           <td>
-            ${c.hidden 
+            ${c.isFlagged 
               ? `<button class="btn btn-show" onclick="toggleHide(${c.id}, this)">Show</button>` 
               : `<button class="btn btn-hide" onclick="toggleHide(${c.id}, this)">Hide</button>`}
-            <button class="btn btn-delete" onclick="promptDelete(${c.id}, '${escapeHtml(c.title)}', this)">Delete</button>
+            <button class="btn btn-delete" onclick="promptDelete(${c.id}, '${escapeHtml(c.title || 'Untitled')}', this)">Delete</button>
           </td>
         </tr>
       `).join('');
@@ -182,7 +182,7 @@ confessions = Array.isArray(data) ? data : (data.confessions || []);
 
       try {
         if (type === 'delete') {
-          await api(`/api/confessions/${id}`, { method: 'DELETE' });
+          await api(`/api/admin/confessions/${id}`, { method: 'DELETE' });
           showToast('Deleted successfully');
           confessions = confessions.filter(c => c.id !== id);
           render();
@@ -190,7 +190,7 @@ confessions = Array.isArray(data) ? data : (data.confessions || []);
         closeModal();
       } catch (e) {
         showToast('Error: ' + e.message, true);
-        modalBtn.innerHTML = type === 'delete' ? 'Delete' : 'Confirm';
+        modalBtn.innerHTML = 'Delete';
         modalBtn.disabled = false;
       }
     }
@@ -201,13 +201,10 @@ confessions = Array.isArray(data) ? data : (data.confessions || []);
       btn.disabled = true;
       try {
         const c = confessions.find(x => x.id === id);
-        const res = await api(`/api/confessions/${id}/hide`, {
-          method: 'PATCH',
-          body: JSON.stringify({ hidden: !c.hidden })
-        });
-        c.hidden = !c.hidden;
+        await api(`/api/admin/confessions/${id}/toggle`, { method: 'POST' });
+        c.isFlagged = !c.isFlagged;
         render();
-        showToast(c.hidden ? 'Hidden' : 'Visible');
+        showToast(c.isFlagged ? 'Hidden' : 'Visible');
       } catch (e) {
         showToast('Error: ' + e.message, true);
         btn.textContent = originalText;
