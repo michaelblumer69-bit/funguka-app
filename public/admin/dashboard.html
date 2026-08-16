@@ -103,7 +103,8 @@
 
     async function loadData() {
       try {
-        confessions = await api('/api/confessions') || [];
+        const data = await api('/api/confessions') || [];
+confessions = Array.isArray(data) ? data : (data.confessions || []);
         render();
       } catch (e) {
         showToast('Failed to load: ' + e.message, true);
