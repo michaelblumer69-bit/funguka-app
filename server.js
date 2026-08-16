@@ -626,7 +626,59 @@ app.use((err, req, res, next) => {
 // ==================== START ====================
 initDatabase().then(() => {
   seedData().then(() => {
-    app.listen(PORT, () => {
+    // Admin: Delete confession
+app.delete('/api/confessions/:id', async (req, res) => {
+  const token = req.headers['x-admin-token'];
+  if (token !== process.env.ADMIN_TOKEN) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const { id } = req.params;
+  try {
+    // Get audio URL first to delete from Cloudinary
+    const result = await db.query('SELECT audio_url FROM confessions WHERE id = $1', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    const audioUrl = result.rows[0].audio_url;
+    
+    // Delete from Cloudinary if audio exists
+    if (audioUrl && audioUrl.includes('cloudinary')) {
+      try {
+        const publicId = audioUrl.split('/').pop().split('.')[0];
+        await cloudinary.uploader.destroy(publicId, { resource_type: 'video' });
+      } catch (e) {
+        console.log('Cloudinary delete skipped:', e.message);
+      }
+    }
+
+    // Delete from database
+    await db.query('DELETE FROM confessions WHERE id = $1', [id]);
+    res.status(204).send();
+  } catch (err) {
+    console.error('Delete error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin: Toggle hide/show
+app.patch('/api/confessions/:id/hide', async (req, res) => {
+  const token = req.headers['x-admin-token'];
+  if (token !== process.env.ADMIN_TOKEN) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const { id } = req.params;
+  const { hidden } = req.body;
+  try {
+    await db.query('UPDATE confessions SET hidden = $1 WHERE id = $2', [hidden, id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Hide error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});app.listen(PORT, () => {
       console.log('');
       console.log('╔══════════════════════════════════════════╗');
       console.log('║         FUNGUKA IS LIVE v2.0             ║');
