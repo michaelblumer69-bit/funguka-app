@@ -562,29 +562,31 @@ html, body {
 
 .reactions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 32px;
   flex-wrap: wrap;
 }
 
 .react-btn {
-  padding: 10px 20px;
+  padding: 8px 14px;
   border-radius: 20px;
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--text-muted);
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   user-select: none;
+  line-height: 1;
 }
 .react-btn:hover {
   border-color: var(--border-hover);
   color: #ddd;
+  transform: translateY(-1px);
 }
 .react-btn.active {
   background: var(--pink-dim);
@@ -592,13 +594,6 @@ html, body {
   border-color: rgba(255,0,110,0.4);
 }
 .react-btn:active { transform: scale(0.96); }
-
-.react-btn .heart-icon {
-  transition: transform 0.2s;
-}
-.react-btn.active .heart-icon {
-  transform: scale(1.2);
-}
 
 .section-title {
   font-size: 17px;
@@ -1044,6 +1039,9 @@ let playInterval = null;
 let currentConfessionId = null;
 let searchVisible = false;
 
+const REACTION_TYPES = ['laugh', 'shocked', 'crying', 'broken', 'love'];
+const REACTION_EMOJIS = { laugh: '😂', shocked: '😱', crying: '😢', broken: '💔', love: '❤️' };
+
 // ==================== NAVIGATION ====================
 function goTo(screen) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1178,7 +1176,9 @@ function renderFeed() {
     return;
   }
 
-  feed.innerHTML = confessions.map((c, i) => `
+  feed.innerHTML = confessions.map((c, i) => {
+    const userEmoji = c.userReactionType ? REACTION_EMOJIS[c.userReactionType] : '♡';
+    return `
     <div class="confession-card" onclick="openDetail(${c.id})" style="animation-delay: ${i * 0.05}s">
       <span class="cat-tag ${c.category}">${c.catLabel}</span>
       <h3>${escapeHtml(c.title)}</h3>
@@ -1186,15 +1186,15 @@ function renderFeed() {
       <div class="card-footer">
         <div class="play-btn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          ${c.duration}${c.audiourl ? ' 🔊' : ''}
+          ${c.duration}${c.audioUrl ? ' 🔊' : ''}
         </div>
         <div class="card-stats">
           <span>▶ ${formatNum(c.plays)}</span>
-          <span>♡ ${formatNum(c.reactions)}</span>
+          <span>${userEmoji} ${formatNum(c.reactions)}</span>
         </div>
       </div>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 // ==================== FILTER ====================
@@ -1228,6 +1228,7 @@ async function openDetail(id) {
     return;
   }
 
+  const counts = confession.counts || {};
   content.innerHTML = `
     <span class="cat-tag ${confession.category}">${confession.catLabel}</span>
     <h2 class="detail-title">${escapeHtml(confession.title)}</h2>
@@ -1235,7 +1236,7 @@ async function openDetail(id) {
     <div class="audio-player">
       <div class="waveform">${waveformHTML}</div>
       <div class="player-controls">
-        <button class="player-btn" onclick="togglePlayAudio(this, ${confession.id}, '${confession.audiourl || ''}', '${confession.duration}')" id="play-btn-${confession.id}">
+        <button class="player-btn" onclick="togglePlayAudio(this, ${confession.id}, '${confession.audioUrl || ''}', '${confession.duration}')" id="play-btn-${confession.id}">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="white" id="play-icon-${confession.id}"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         </button>
         <span class="player-time" id="player-time-${confession.id}">0:00 / ${confession.duration}</span>
@@ -1248,12 +1249,13 @@ async function openDetail(id) {
 
     <p class="full-text">${escapeHtml(confession.fullText).replace(/\n/g, '<br>')}</p>
 
-    <div class="reactions">
-      <button class="react-btn ${confession.userReacted ? 'active' : ''}" onclick="toggleReact(this, ${confession.id})">
-        <svg class="heart-icon" width="15" height="15" viewBox="0 0 24 24" fill="${confession.userReacted ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        I feel you (${formatNum(confession.reactions)})
-      </button>
-      <button class="react-btn" onclick="shareConfession(${confession.id})">Share</button>
+    <div class="reactions" id="reaction-bar-${confession.id}">
+      <button class="react-btn ${confession.userReactionType === 'laugh' ? 'active' : ''}" onclick="toggleReact(this, ${confession.id}, 'laugh')">😂 ${formatNum(counts.laugh || 0)}</button>
+      <button class="react-btn ${confession.userReactionType === 'shocked' ? 'active' : ''}" onclick="toggleReact(this, ${confession.id}, 'shocked')">😱 ${formatNum(counts.shocked || 0)}</button>
+      <button class="react-btn ${confession.userReactionType === 'crying' ? 'active' : ''}" onclick="toggleReact(this, ${confession.id}, 'crying')">😢 ${formatNum(counts.crying || 0)}</button>
+      <button class="react-btn ${confession.userReactionType === 'broken' ? 'active' : ''}" onclick="toggleReact(this, ${confession.id}, 'broken')">💔 ${formatNum(counts.broken || 0)}</button>
+      <button class="react-btn ${confession.userReactionType === 'love' ? 'active' : ''}" onclick="toggleReact(this, ${confession.id}, 'love')">❤️ ${formatNum(counts.love || 0)}</button>
+      <button class="react-btn" onclick="shareConfession(${confession.id})">↗️ Share</button>
     </div>
   `;
 
@@ -1264,17 +1266,19 @@ async function openDetail(id) {
 async function loadRelated(id, category) {
   try {
     const related = await apiGet(`/api/confessions/${id}/related`);
-    document.getElementById('related-feed').innerHTML = related.length ? related.map(c => `
+    document.getElementById('related-feed').innerHTML = related.length ? related.map(c => {
+      const userEmoji = c.userReactionType ? REACTION_EMOJIS[c.userReactionType] : '♡';
+      return `
       <div class="confession-card" onclick="openDetail(${c.id})">
         <span class="cat-tag ${c.category}">${c.catLabel}</span>
         <h3>${escapeHtml(c.title)}</h3>
         <p class="preview-text">${escapeHtml(c.preview)}</p>
         <div class="card-footer">
-          <div class="play-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>${c.duration}${c.audiourl ? ' 🔊' : ''}</div>
-          <div class="card-stats"><span>▶ ${formatNum(c.plays)}</span><span>♡ ${formatNum(c.reactions)}</span></div>
+          <div class="play-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>${c.duration}${c.audioUrl ? ' 🔊' : ''}</div>
+          <div class="card-stats"><span>▶ ${formatNum(c.plays)}</span><span>${userEmoji} ${formatNum(c.reactions)}</span></div>
         </div>
       </div>
-    `).join('') : '<p style="color:#555;padding:0 20px;font-size:13px;">No related confessions yet.</p>';
+    `}).join('') : '<p style="color:#555;padding:0 20px;font-size:13px;">No related confessions yet.</p>';
   } catch (err) {
     document.getElementById('related-feed').innerHTML = '';
   }
@@ -1296,23 +1300,19 @@ function formatTime(seconds) {
 }
 
 function togglePlayAudio(btn, id, audioUrl, durationStr) {
-  // If already playing this same audio, pause it
   if (isPlaying && currentAudio === id && audioElement) {
     audioElement.pause();
     stopAudio();
     return;
   }
 
-  // If playing a different audio, stop it first
   if (isPlaying && currentAudio !== id) {
     stopAudio();
   }
 
-  // If there's a real audio URL, play it
   if (audioUrl) {
     playRealAudio(id, audioUrl, durationStr);
   } else {
-    // No audio file — use simulation (for seed confessions)
     playSimulatedAudio(id, durationStr);
   }
 }
@@ -1321,7 +1321,6 @@ function playRealAudio(id, audioUrl, durationStr) {
   isPlaying = true;
   currentAudio = id;
 
-  // Create or reuse audio element
   if (!audioElement) {
     audioElement = new Audio();
   }
@@ -1334,11 +1333,9 @@ function playRealAudio(id, audioUrl, durationStr) {
     return;
   });
 
-  // Update play button to pause icon
   const icon = document.getElementById('play-icon-' + id);
   if (icon) icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
 
-  // Animate waveform
   document.querySelectorAll('.wave-bar').forEach((bar, i) => {
     setTimeout(() => bar.classList.add('active'), i * 30);
   });
@@ -1346,7 +1343,6 @@ function playRealAudio(id, audioUrl, durationStr) {
   const totalSec = parseDuration(durationStr);
   const timeDisplay = document.getElementById('player-time-' + id);
 
-  // Update progress in real-time
   playInterval = setInterval(() => {
     if (!audioElement) return;
 
@@ -1363,13 +1359,11 @@ function playRealAudio(id, audioUrl, durationStr) {
       timeDisplay.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
     }
 
-    // Auto-stop when finished
     if (audioElement.ended || current >= duration) {
       stopAudio();
     }
   }, 100);
 
-  // Also listen for natural end
   audioElement.onended = () => stopAudio();
 }
 
@@ -1386,7 +1380,7 @@ function playSimulatedAudio(id, durationStr) {
   const totalSec = parseDuration(durationStr);
   const timeDisplay = document.getElementById('player-time-' + id);
   let progress = 0;
-  const step = 100 / (totalSec * 10); // Update 10 times per second
+  const step = 100 / (totalSec * 10);
 
   playInterval = setInterval(() => {
     progress += step;
@@ -1428,7 +1422,6 @@ function seekAudio(e, id) {
   const rect = bar.getBoundingClientRect();
   const pct = ((e.clientX - rect.left) / rect.width);
 
-  // If real audio is playing, seek to that position
   if (audioElement && currentAudio === id) {
     const duration = audioElement.duration || parseDuration(document.getElementById('player-time-' + id)?.textContent?.split(' / ')[1] || '2:00');
     audioElement.currentTime = pct * duration;
@@ -1441,26 +1434,25 @@ function seekAudio(e, id) {
 }
 
 // ==================== REACTIONS ====================
-async function toggleReact(btn, id) {
+async function toggleReact(btn, id, type) {
   try {
-    const result = await apiPost(`/api/confessions/${id}/react`, { type: 'feel' });
+    const result = await apiPost(`/api/confessions/${id}/react`, { type });
 
-    btn.classList.toggle('active', result.reacted);
-    const heart = btn.querySelector('.heart-icon');
-    if (heart) {
-      heart.setAttribute('fill', result.reacted ? 'currentColor' : 'none');
-    }
+    const container = btn.closest('.reactions');
+    const buttons = container.querySelectorAll('.react-btn');
 
-    const match = btn.textContent.match(/\d+/);
-    btn.innerHTML = `
-      <svg class="heart-icon" width="15" height="15" viewBox="0 0 24 24" fill="${result.reacted ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-      I feel you (${formatNum(result.reactions)})
-    `;
+    REACTION_TYPES.forEach((t, i) => {
+      const b = buttons[i];
+      if (!b) return;
+      b.classList.toggle('active', result.userType === t);
+      b.textContent = `${REACTION_EMOJIS[t]} ${formatNum(result.counts[t] || 0)}`;
+    });
 
     const c = confessions.find(x => x.id === id);
     if (c) {
-      c.reactions = result.reactions;
-      c.userReacted = result.reacted;
+      c.reactions = result.total;
+      c.userReactionType = result.userType;
+      c.counts = result.counts;
     }
   } catch (err) {
     showToast('Failed to react', 'error');

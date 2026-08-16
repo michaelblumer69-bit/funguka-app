@@ -293,10 +293,10 @@ app.get('/api/confessions', async (req, res) => {
       userReactions = reactionResult.rows;
     }
 
-    const reactedSet = new Set(userReactions.map(r => r.confessionid));
+    const reactedMap = new Map(userReactions.map(r => [r.confessionid, r.type]));
 
     res.json({
-      confessions: fixedRows.map(r => ({ ...r, userReacted: reactedSet.has(r.id) })),
+      confessions: fixedRows.map(r => ({ ...r, userReacted: reactedMap.has(r.id), userReactionType: reactedMap.get(r.id) || null })),
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -321,10 +321,10 @@ app.get('/api/confessions/:id', async (req, res) => {
     const confession = {
       ...row,
       catLabel: row.catlabel || row.catLabel,
-      audioUrl: row.audiourl || row.audioUrl,
-      fullText: row.fulltext || row.fullText,
-      createdAt: row.createdat || row.createdAt,
-      isFlagged: row.isflagged !== undefined ? row.isflagged : row.isFlagged
+      audioUrl: row.audiourl || r.audioUrl,
+      fullText: row.fulltext || r.fullText,
+      createdAt: row.createdat || r.createdAt,
+      isFlagged: row.isflagged !== undefined ? r.isflagged : r.isFlagged
     };
 
     const reactionResult = await query(
@@ -332,7 +332,14 @@ app.get('/api/confessions/:id', async (req, res) => {
       [req.params.id, req.session.anonId]
     );
 
+    const typeCounts = await query(
+      'SELECT type, COUNT(*) as count FROM reactions WHERE confessionId = $1 GROUP BY type',
+      [req.params.id]
+    );
+
     confession.userReacted = reactionResult.rows.length > 0;
+    confession.userReactionType = reactionResult.rows.length > 0 ? reactionResult.rows[0].type : null;
+    confession.counts = typeCounts.rows.reduce((acc, r) => { acc[r.type] = parseInt(r.count); return acc; }, {});
     res.json(confession);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch confession' });
@@ -349,31 +356,64 @@ app.post('/api/confessions/:id/play', async (req, res) => {
   }
 });
 
-// Add reaction
+// Add reaction — 5 types: laugh, shocked, crying, broken, love
 app.post('/api/confessions/:id/react', async (req, res) => {
   try {
-    const { type = 'feel' } = req.body;
+    const { type } = req.body;
     const confessionId = parseInt(req.params.id);
+    
+    const validTypes = ['laugh', 'shocked', 'crying', 'broken', 'love'];
+    if (!type || !validTypes.includes(type)) {
+      return res.status(400).json({ error: 'Invalid reaction type' });
+    }
 
     const existing = await query(
-      'SELECT id FROM reactions WHERE confessionId = $1 AND sessionId = $2',
+      'SELECT id, type FROM reactions WHERE confessionId = $1 AND sessionId = $2',
       [confessionId, req.session.anonId]
     );
 
+    let userType = null;
+    let totalChange = 0;
+
     if (existing.rows.length > 0) {
-      await query('DELETE FROM reactions WHERE id = $1', [existing.rows[0].id]);
-      await query('UPDATE confessions SET reactions = reactions - 1 WHERE id = $1', [confessionId]);
-      const countResult = await query('SELECT reactions FROM confessions WHERE id = $1', [confessionId]);
-      res.json({ reacted: false, reactions: countResult.rows[0].reactions });
+      if (existing.rows[0].type === type) {
+        // Same reaction tapped — remove it (toggle off)
+        await query('DELETE FROM reactions WHERE id = $1', [existing.rows[0].id]);
+        totalChange = -1;
+      } else {
+        // Different reaction — update to new type
+        await query('UPDATE reactions SET type = $1 WHERE id = $2', [type, existing.rows[0].id]);
+        userType = type;
+      }
     } else {
+      // New reaction
       await query(
         'INSERT INTO reactions (confessionId, sessionId, type) VALUES ($1, $2, $3)',
         [confessionId, req.session.anonId, type]
       );
-      await query('UPDATE confessions SET reactions = reactions + 1 WHERE id = $1', [confessionId]);
-      const countResult = await query('SELECT reactions FROM confessions WHERE id = $1', [confessionId]);
-      res.json({ reacted: true, reactions: countResult.rows[0].reactions });
+      totalChange = 1;
+      userType = type;
     }
+
+    if (totalChange !== 0) {
+      await query('UPDATE confessions SET reactions = reactions + $1 WHERE id = $2', [totalChange, confessionId]);
+    }
+
+    const countResult = await query('SELECT reactions FROM confessions WHERE id = $1', [confessionId]);
+    const typeCounts = await query(
+      'SELECT type, COUNT(*) as count FROM reactions WHERE confessionId = $1 GROUP BY type',
+      [confessionId]
+    );
+
+    const counts = {};
+    typeCounts.rows.forEach(r => counts[r.type] = parseInt(r.count));
+
+    res.json({ 
+      reacted: userType !== null,
+      userType,
+      total: countResult.rows[0].reactions,
+      counts
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to process reaction' });
