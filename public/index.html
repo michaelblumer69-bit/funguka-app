@@ -1314,10 +1314,10 @@ function loadSaved() {
       <h3>${escapeHtml(c.title)}</h3>
       <p class="preview-text">${escapeHtml(c.preview)}</p>
       <div class="card-footer">
-        <div class="play-btn">
+        ${c.audioUrl ? `<div class="play-btn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          ${c.duration}${c.audioUrl ? ' 🔊' : ''}
-        </div>
+          ${c.duration} 🔊
+        </div>` : '<div></div>'}
         <div class="card-stats">
           <span>▶ ${formatNum(c.plays)}</span>
           <span>${userEmoji} ${formatNum(c.reactions)}</span>
@@ -1390,10 +1390,10 @@ function renderFeed() {
       <h3>${escapeHtml(c.title)}</h3>
       <p class="preview-text">${escapeHtml(c.preview)}</p>
       <div class="card-footer">
-        <div class="play-btn">
+        ${c.audioUrl ? `<div class="play-btn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          ${c.duration}${c.audioUrl ? ' 🔊' : ''}
-        </div>
+          ${c.duration} 🔊
+        </div>` : '<div></div>'}
         <div class="card-stats">
           <span>▶ ${formatNum(c.plays)}</span>
           <span>${userEmoji} ${formatNum(c.reactions)}</span>
@@ -1489,7 +1489,7 @@ async function loadRelated(id, category) {
         <h3>${escapeHtml(c.title)}</h3>
         <p class="preview-text">${escapeHtml(c.preview)}</p>
         <div class="card-footer">
-          <div class="play-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>${c.duration}${c.audioUrl ? ' 🔊' : ''}</div>
+          ${c.audioUrl ? `<div class="play-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>${c.duration} 🔊</div>` : '<div></div>'}
           <div class="card-stats"><span>▶ ${formatNum(c.plays)}</span><span>${userEmoji} ${formatNum(c.reactions)}</span><span class="save-btn ${isSaved(c.id) ? 'active' : ''}" data-id="${c.id}" onclick="event.stopPropagation(); toggleSaveById(${c.id})">${isSaved(c.id) ? '♥' : '♡'}</span></div>
         </div>
       </div>
